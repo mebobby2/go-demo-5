@@ -12,6 +12,9 @@ spec:
     volumeMounts:
     - name: workspace
       mountPath: /workspace
+# we are mounting Docker socket so that the Docker client inside the container can issue
+# commands to Docker server running on the host (uses Docker server running on the node).
+# Otherwise, we would be running Docker-in-Docker, and that is not a very good idea.
     - name: docker-socket
       mountPath: /var/run/docker.sock
     workingDir: /workspace
@@ -47,3 +50,12 @@ spec:
       type: Socket
   - name: workspace
     emptyDir: {}
+
+# The workspace volume is essentially shared amongst all the containers.
+# This means the containers can potentially communicated (via files) using the shared volume.
+
+# We'll accomplish two things with those volumes. On the one hand, all the containers
+# will have a shared space so the artifacts generated through the actions we will perform
+# in one will be available in the other. On the other hand, since emptyDir volume type
+# exists only just as long as the Pod is running, it'll be deleted when we remove the Pod.
+# As a result, we won't be leaving unnecessary garbage on our nodes or external drives.
