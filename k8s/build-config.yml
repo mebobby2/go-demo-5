@@ -7,9 +7,8 @@ metadata:
 data:
   build-config.properties: |
     project=go-demo-3
-    image=vfarcic/go-demo-3
+    image=mebobby/go-demo-3
     domain=acme.com
     addr=go-demo-3.acme.com
     cmAddr=cm.acme.com
     chartVer=0.0.1
-
