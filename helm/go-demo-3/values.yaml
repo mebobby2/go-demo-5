@@ -1,5 +1,5 @@
-replicaCount: 3
-dbReplicaCount: 3
+replicaCount: 2
+dbReplicaCount: 2
 image:
   tag: latest
   dbTag: 3.3
