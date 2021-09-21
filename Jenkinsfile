@@ -53,7 +53,7 @@ spec:
           k8sUpgradeBeta(props.project, props.domain, "--set replicaCount=2 --set dbReplicaCount=1")
         }
         container("kubectl") {
-          k8sRolloutBeta(props.domain)
+          k8sRolloutBeta(props.project)
         }
         container("golang") {
           k8sFuncTestGolang(props.project, props.domain)
