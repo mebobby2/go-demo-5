@@ -18,7 +18,7 @@ spec:
     image: vfarcic/helm:3.0.2
     command: ["cat"]
     tty: true
-    volumneMounts:
+    volumeMounts:
     - name: build-config
       mountPath: /etc/config
   - name: kubectl
