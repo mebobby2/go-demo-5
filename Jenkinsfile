@@ -4,9 +4,10 @@ def props
 def label = "jenkins-slave-${UUID.randomUUID().toString()}"
 currentBuild.displayName = new SimpleDateFormat("yy.MM.dd").format(new Date()) + "-" + env.BUILD_NUMBER
 
+
 podTemplate(
   label: label,
-  namespace: "go-demo-3-build", // Not allowed with declarative
+  namespace: "go-demo-3-build",
   serviceAccount: "build",
   yaml: """
 apiVersion: v1
@@ -14,10 +15,10 @@ kind: Pod
 spec:
   containers:
   - name: helm
-    image: vfarcic/helm:2.9.1
+    image: vfarcic/helm:3.0.2
     command: ["cat"]
     tty: true
-    volumeMounts:
+    volumneMounts:
     - name: build-config
       mountPath: /etc/config
   - name: kubectl
@@ -40,7 +41,7 @@ spec:
         sh "cp /etc/config/build-config.properties ."
         props = readProperties interpolate: true, file: "build-config.properties"
       }
-      node("docker") { // Not allowed with declarative
+      node("docker") { // nesting docker node inside pod node so that when things are building on the docker node, the pod nodes dont' die since they are ephemeral
         checkout scm
         k8sBuildImageBeta(props.image)
       }
@@ -52,7 +53,7 @@ spec:
           k8sUpgradeBeta(props.project, props.domain, "--set replicaCount=2 --set dbReplicaCount=1")
         }
         container("kubectl") {
-          k8sRolloutBeta(props.project)
+          k8sRolloutBeta(props.domain)
         }
         container("golang") {
           k8sFuncTestGolang(props.project, props.domain)
