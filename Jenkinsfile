@@ -1,95 +1,68 @@
 import java.text.SimpleDateFormat
 
-def props
-def label = "jenkins-slave-${UUID.randomUUID().toString()}"
-currentBuild.displayName = new SimpleDateFormat("yy.MM.dd").format(new Date()) + "-" + env.BUILD_NUMBER
-
-
-podTemplate(
-  label: label,
-  namespace: "go-demo-3-build",
-  serviceAccount: "build",
-  yaml: """
-apiVersion: v1
-kind: Pod
-spec:
-  containers:
-  - name: helm
-    image: vfarcic/helm:3.0.2
-    command: ["cat"]
-    tty: true
-    volumeMounts:
-    - name: build-config
-      mountPath: /etc/config
-  - name: kubectl
-    image: vfarcic/kubectl
-    command: ["cat"]
-    tty: true
-  - name: golang
-    image: golang:1.12
-    command: ["cat"]
-    tty: true
-  volumes:
-  - name: build-config
-    configMap:
-      name: build-config
-"""
-) {
-  node(label) {
+pipeline {
+  options {
+    buildDiscarder logRotator(numToKeepStr: '5')
+    disableConcurrentBuilds()
+  }
+  agent {
+    kubernetes {
+      cloud "kubernetes"
+      label "go-demo-5-build"
+      serviceAccount "build"
+      yamlFile "KubernetesPod.yaml"
+    }
+  }
+  environment {
+    image = "mebobby/go-demo-3"
+    project = "go-demo-5"
+    domain = "192.168.99.104.nip.io"
+    cmAddr = "cm.192.168.99.104.nip.io"
+  }
+  stages {
     stage("build") {
-      container("helm") {
-        sh "cp /etc/config/build-config.properties ."
-        props = readProperties interpolate: true, file: "build-config.properties"
-      }
-      node("docker") { // nesting docker node inside pod node so that when things are building on the docker node, the pod nodes dont' die since they are ephemeral
-        checkout scm
-        k8sBuildImageBeta(props.image)
+      steps {
+        container("golang") {
+          script {
+            currentBuild.displayName = new SimpleDateFormat("yy.MM.dd").format(new Date()) + "-${env.BUILD_NUMBER}"
+          }
+          k8sBuildGolang("go-demo")
+        }
+        container("docker") {
+          k8sBuildImageBeta(image, false)
+        }
       }
     }
     stage("func-test") {
-      try {
+      steps {
         container("helm") {
-          checkout scm
-          k8sUpgradeBeta(props.project, props.domain, "--set replicaCount=2 --set dbReplicaCount=1")
+          k8sUpgradeBeta(project, domain, "--set replicaCount=2 --set dbReplicaCount=1")
         }
         container("kubectl") {
-          k8sRolloutBeta(props.project)
+          k8sRolloutBeta(project)
         }
         container("golang") {
-          k8sFuncTestGolang(props.project, props.domain)
+          k8sFuncTestGolang(project, domain)
         }
-      } catch(e) {
-          error "Failed functional tests"
-      } finally {
-        container("helm") {
-          k8sDeleteBeta(props.project)
+      }
+      post {
+        always {
+          container("helm") {
+            k8sDeleteBeta(project)
+          }
         }
       }
     }
-    if ("${BRANCH_NAME}" == "master") {
-      stage("release") {
-        node("docker") {
-          k8sPushImage(props.image)
+    stage("release") {
+      when {
+          branch "master"
+      }
+      steps {
+        container("docker") {
+          k8sPushImage(image, false)
         }
         container("helm") {
-          k8sPushHelm(props.project, props.chartVer, props.cmAddr)
-        }
-      }
-      stage("deploy") {
-        try {
-          container("helm") {
-            k8sUpgrade(props.project, props.addr)
-          }
-          container("kubectl") {
-            k8sRollout(props.project)
-          }
-          container("golang") {
-            k8sProdTestGolang(props.addr)
-          }
-        } catch(e) {
-          container("helm") {
-            k8sRollback(props.project)
-          }
+          k8sPushHelm(project, "", cmAddr, true, true)
         }
       }
     }
