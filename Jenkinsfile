@@ -26,7 +26,6 @@ pipeline {
           script {
             currentBuild.displayName = new SimpleDateFormat("yy.MM.dd").format(new Date()) + "-${env.BUILD_NUMBER}"
           }
-          sh 'git config http.sslVerify false'
           k8sBuildGolang("go-demo")
         }
         container("docker") {
