@@ -58,9 +58,9 @@ metadata:
   namespace: go-demo-5-build
 spec:
   hard:
-    requests.cpu: 2
+    requests.cpu: 4
     requests.memory: 3Gi
-    limits.cpu: 3
+    limits.cpu: 8
     limits.memory: 5Gi
     pods: 15
 
