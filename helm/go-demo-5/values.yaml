@@ -14,16 +14,16 @@ rbac:
 resources:
   limits:
    cpu: 0.4
-   memory: 200Mi
+   memory: 800Mi
   requests:
    cpu: 0.2
-   memory: 100Mi
+   memory: 500Mi
 dbResources:
   limits:
-    memory: "200Mi"
+    memory: "800Mi"
     cpu: 0.4
   requests:
-    memory: "100Mi"
+    memory: "500Mi"
     cpu: 0.2
 dbPersistence:
   ## If defined, storageClassName: <storageClass>
