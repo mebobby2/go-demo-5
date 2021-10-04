@@ -14,7 +14,7 @@ pipeline {
     }
   }
   environment {
-    image = "mebobby/go-demo-3"
+    image = "mebobby/go-demo-5"
     project = "go-demo-5"
     domain = "192.168.64.19.nip.io"
     cmAddr = "cm.192.168.64.19.nip.io"
